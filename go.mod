@@ -1,6 +1,6 @@
 module go-toolbox
 
-go 1.20
+go 1.19
 
 require (
 	github.com/natefinch/lumberjack v2.0.0+incompatible
