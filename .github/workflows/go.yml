@@ -27,6 +27,9 @@ jobs:
     - name: Test
       run: go test -v ./...
 
+    - name: ModTidy
+      run: go mod tidy
+    
     - name: Setup golangci-lint Action
       # You may pin to the exact commit or the version.
       # uses: nickhstr/action-setup-golangci-lint@fd8a299a85613710e29a9c0ca5b6c305601dffcc
