@@ -1,8 +1,7 @@
-package tests
+package go_toolbox
 
 import (
 	"fmt"
-	"go-toolbox/clickhouse"
 	"testing"
 )
 
@@ -13,7 +12,7 @@ func TestClickhouse(t *testing.T) {
 		"username",
 		"geo",
 	}
-	config := clickhouse.Config{
+	config := ClickhouseConf{
 		Host:       "",
 		Port:       19000,
 		Username:   "",
@@ -22,7 +21,7 @@ func TestClickhouse(t *testing.T) {
 		Table:      "user_geo",
 		DataSchema: dataSchema,
 	}
-	clickhouseHandler := clickhouse.NewCKHandler(&config)
+	clickhouseHandler := NewCKHandler(&config)
 	keys := ""
 	values := ""
 	for i, v := range clickhouseHandler.DataSchema {

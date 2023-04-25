@@ -1,4 +1,4 @@
-package clickhouse
+package go_toolbox
 
 import "C"
 import (
@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/ClickHouse/clickhouse-go"
 	"github.com/jmoiron/sqlx"
-	"go-toolbox/logger"
 	"net/url"
 	"time"
 )
@@ -18,7 +17,7 @@ const (
 	ClientReadTimeoutDuration     = 90 * time.Second
 )
 
-type Config struct {
+type ClickhouseConf struct {
 	Host       string   `json:"Host"`
 	Port       int      `json:"Port"`
 	Username   string   `json:"Username"`
@@ -28,7 +27,7 @@ type Config struct {
 	DataSchema []string `json:"DataSchema"`
 }
 type CKHandler struct {
-	Config
+	ClickhouseConf
 	clickHouseConnect *sqlx.DB
 	InsertSql         string
 }
@@ -39,7 +38,7 @@ func (c *CKHandler) QueryData(items interface{}, query string) error {
 	defer cancel()
 	err := c.clickHouseConnect.SelectContext(ctx, items, query)
 	if err != nil {
-		logger.Logger.Error(logger.GetLogPrefix("") + fmt.Sprintf("ClickHouse 获取查询结果失败! 错误原因: %v", err))
+		Logger.Error(GetLogPrefix("") + fmt.Sprintf("ClickHouse 获取查询结果失败! 错误原因: %v", err))
 		return err
 	}
 	return nil
@@ -49,7 +48,7 @@ func (c *CKHandler) InsertData(query string, data ...interface{}) (bool, error) 
 	var err error
 	tx, err := c.clickHouseConnect.Begin()
 	if err != nil {
-		logger.Logger.Error(logger.GetLogPrefix("") + fmt.Sprintf("ClickHouse 创建事务失败! 错误原因: %v", err))
+		Logger.Error(GetLogPrefix("") + fmt.Sprintf("ClickHouse 创建事务失败! 错误原因: %v", err))
 		return false, err
 	}
 	defer func() {
@@ -59,21 +58,21 @@ func (c *CKHandler) InsertData(query string, data ...interface{}) (bool, error) 
 	}()
 	stmt, err := tx.Prepare(query)
 	if err != nil {
-		logger.Logger.Error(logger.GetLogPrefix("") + fmt.Sprintf("ClickHouse 生成 SQL 预编译语句失败! 错误原因: %v", err))
+		Logger.Error(GetLogPrefix("") + fmt.Sprintf("ClickHouse 生成 SQL 预编译语句失败! 错误原因: %v", err))
 		return false, err
 	}
 	if stmt == nil {
-		logger.Logger.Error(logger.GetLogPrefix("") + fmt.Sprintf("ClickHouse 生成 SQL 预编译对象失败!"))
+		Logger.Error(GetLogPrefix("") + fmt.Sprintf("ClickHouse 生成 SQL 预编译对象失败!"))
 		return false, errors.New("预编译对象为空")
 	}
 	if _, execErr := stmt.Exec(data...); execErr != nil {
-		logger.Logger.Error(logger.GetLogPrefix("") + fmt.Sprintf("ClickHouse 数据写入失败! 错误原因: %v", execErr))
+		Logger.Error(GetLogPrefix("") + fmt.Sprintf("ClickHouse 数据写入失败! 错误原因: %v", execErr))
 		err = execErr
 		return false, execErr
 	}
 	err = tx.Commit()
 	if err != nil {
-		logger.Logger.Error(logger.GetLogPrefix("") + fmt.Sprintf("ClickHouse 数据写入事务执行失败! 错误原因: %v", err))
+		Logger.Error(GetLogPrefix("") + fmt.Sprintf("ClickHouse 数据写入事务执行失败! 错误原因: %v", err))
 		return false, err
 	}
 	return true, nil
@@ -81,13 +80,13 @@ func (c *CKHandler) InsertData(query string, data ...interface{}) (bool, error) 
 
 func (c *CKHandler) BatchInsertData(query string, dataArrays [][]interface{}) (bool, error) {
 	if dataArrays == nil {
-		logger.Logger.Error(logger.GetLogPrefix("") + fmt.Sprintf("ClickHouse 写入方法缺少参数"))
+		Logger.Error(GetLogPrefix("") + fmt.Sprintf("ClickHouse 写入方法缺少参数"))
 		return false, errors.New("ClickHouse 写入方法缺少参数")
 	}
 	var err error
 	tx, err := c.clickHouseConnect.Begin()
 	if err != nil {
-		logger.Logger.Error(logger.GetLogPrefix("") + fmt.Sprintf("ClickHouse 创建事务失败! 错误原因: %v", err))
+		Logger.Error(GetLogPrefix("") + fmt.Sprintf("ClickHouse 创建事务失败! 错误原因: %v", err))
 		return false, err
 	}
 	defer func() {
@@ -97,24 +96,24 @@ func (c *CKHandler) BatchInsertData(query string, dataArrays [][]interface{}) (b
 	}()
 	stmt, err := tx.Prepare(query)
 	if err != nil {
-		logger.Logger.Error(logger.GetLogPrefix("") + fmt.Sprintf("ClickHouse 生成 SQL 预编译语句失败! 错误原因: %v", err))
+		Logger.Error(GetLogPrefix("") + fmt.Sprintf("ClickHouse 生成 SQL 预编译语句失败! 错误原因: %v", err))
 		return false, err
 	}
 	if stmt == nil {
-		logger.Logger.Error(logger.GetLogPrefix("") + fmt.Sprintf("ClickHouse 生成 SQL 预编译对象失败"))
+		Logger.Error(GetLogPrefix("") + fmt.Sprintf("ClickHouse 生成 SQL 预编译对象失败"))
 		return false, errors.New("ClickHouse 生成 SQL 预编译对象失败")
 	}
-	logger.Logger.Info(logger.GetLogPrefix("") + fmt.Sprintf("READY INSERT %d", len(dataArrays)))
+	Logger.Info(GetLogPrefix("") + fmt.Sprintf("READY INSERT %d", len(dataArrays)))
 	for _, data := range dataArrays {
 		if _, execErr := stmt.Exec(data...); execErr != nil {
-			logger.Logger.Error(logger.GetLogPrefix("") + fmt.Sprintf("ClickHouse 数据写入失败! 错误原因: %v", execErr))
+			Logger.Error(GetLogPrefix("") + fmt.Sprintf("ClickHouse 数据写入失败! 错误原因: %v", execErr))
 			err = execErr
 			return false, execErr
 		}
 	}
 	err = tx.Commit()
 	if err != nil {
-		logger.Logger.Error(logger.GetLogPrefix("") + fmt.Sprintf("ClickHouse 数据写入事务执行失败! 错误原因: %v", err))
+		Logger.Error(GetLogPrefix("") + fmt.Sprintf("ClickHouse 数据写入事务执行失败! 错误原因: %v", err))
 		return false, err
 	}
 	return true, nil
@@ -128,17 +127,17 @@ func (c *CKHandler) InitClickHouse() {
 			"tcp://%s:%d?username=%s&password=%s&database=%s&block_size=%d&read_timeout=%d",
 			c.Host, c.Port, c.Username, url.QueryEscape(c.Password), c.Database, ClientMaxBlockSize, ClientReadTimeout))
 	if connectErr != nil {
-		logger.Logger.Fatal(logger.GetLogPrefix("") + fmt.Sprintf("ClickHouse 创建连接对象失败! 错误原因: %v", connectErr))
+		Logger.Fatal(GetLogPrefix("") + fmt.Sprintf("ClickHouse 创建连接对象失败! 错误原因: %v", connectErr))
 	}
 	if pingErr := ckConnect.Ping(); pingErr != nil {
 		if exception, ok := pingErr.(*clickhouse.Exception); ok {
-			logger.Logger.Fatal(logger.GetLogPrefix("") + fmt.Sprintf("ClickHouse 连接失败! 错误原因: %v; [%d] %s; %s\n", connectErr, exception.Code, exception.Message, exception.StackTrace))
+			Logger.Fatal(GetLogPrefix("") + fmt.Sprintf("ClickHouse 连接失败! 错误原因: %v; [%d] %s; %s\n", connectErr, exception.Code, exception.Message, exception.StackTrace))
 		} else {
-			logger.Logger.Fatal(logger.GetLogPrefix("") + fmt.Sprintf("ClickHouse 连接失败! 错误原因: %v", pingErr))
+			Logger.Fatal(GetLogPrefix("") + fmt.Sprintf("ClickHouse 连接失败! 错误原因: %v", pingErr))
 		}
 	}
 	c.clickHouseConnect = ckConnect
-	logger.Logger.Info(logger.GetLogPrefix("") + fmt.Sprintf("ClickHouse 连接成功!"))
+	Logger.Info(GetLogPrefix("") + fmt.Sprintf("ClickHouse 连接成功!"))
 }
 func (c *CKHandler) InitInsertSQL() {
 	keys := ""
@@ -162,9 +161,9 @@ func (c *CKHandler) InitInsertSQL() {
 	//)
 }
 
-func NewCKHandler(ckConf *Config) *CKHandler {
+func NewCKHandler(ckConf *ClickhouseConf) *CKHandler {
 	client := &CKHandler{
-		Config{
+		ClickhouseConf{
 			Host:       ckConf.Host,
 			Port:       ckConf.Port,
 			Username:   ckConf.Username,

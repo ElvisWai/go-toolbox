@@ -1,4 +1,4 @@
-package logger
+package go_toolbox
 
 import (
 	"encoding/json"
