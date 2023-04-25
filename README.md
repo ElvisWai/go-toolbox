@@ -1,6 +1,15 @@
 # go-toolbox
 This library is a wrapper for everyday use components
+
 该库是日常使用组件的封装
+
+# Get started
+
+### Install
+```bash
+ go get github.com/ElvisWai/go-toolbox
+```
+
 
 # ToolList
 * Logger -- 日志
