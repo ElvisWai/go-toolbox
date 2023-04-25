@@ -9,12 +9,17 @@ This library is a wrapper for everyday use components
 * Redis 
   * 基于 `go-redis/v9`
   * 布隆过滤器基于`RedisBloom/RedisBloom`
+* Clickhouse
+  * 基于 `clickHouse/clickhouse-go`
+  * 基于 `jmoiron/sqlx`
 
 # TodoList
+* ✅Redis
+* ✅Logger
 * Kafka
 * Apollo
 * Prometheus
 * MYSQL
-* Clickhouse
+* ✅ClickHouse
 * MinIO
 * ....

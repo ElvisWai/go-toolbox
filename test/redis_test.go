@@ -1,11 +1,12 @@
-package redis
+package test
 
 import (
+	"go-toolbox/redis"
 	"testing"
 	"time"
 )
 
-var config = Config{
+var config = redis.Config{
 	Host:      "",
 	Password:  "",
 	Database:  0,
@@ -14,11 +15,12 @@ var config = Config{
 }
 
 func TestGSet(t *testing.T) {
-	redisHandler := NewRedisHandler(&config)
+	redisHandler := redis.NewRedisHandler(&config)
 	redisHandler.Set("test", "a", time.Second)
-	value, succ := redisHandler.Get("test")
-	if !succ {
+	value, success := redisHandler.Get("test")
+	if !success {
 		println("fail")
 	}
 	println(value)
+
 }
